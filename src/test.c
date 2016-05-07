@@ -2,10 +2,7 @@
 #include <stdio.h>
 #include <wiringPi.h>
 #include <mcp3004.h>    //MCP3004 and MCP3008 are the same..
-
-
-#define BASE 200
-#define SPI_CHAN 0
+#include <config.h>
 
 
 int main(){
