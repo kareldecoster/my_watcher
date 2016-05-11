@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <time.h>
 
 #define REAL 0
 #define IMAG 1
@@ -69,28 +70,33 @@ int main(){
 	//LOOP
 	while(!done){
 		/*Acquire signal*/
-		acquire_signal(fft_signal, 16, 1000, 1);
+		acquire_signal(fft_signal, 16, 1000, 0);
 	
 		/*Execute_FFT*/
 		fftw_execute(fft_plan);
 	
 		/*Extract information from spectrum*/
 		analyze_spectrum(fft_result, &a, &b);
-	
 		/*FSM transitions*/
 		transition_fsm(old_state, &new_state, a, b);
 	
 		old_state = new_state;
-	
 		/*FSM outputs*/
 		if(old_state == L3){
 			chickens_inside++;
+			printf("new chick, %d chicks in tha house\n", chickens_inside);
 		}
 		if(old_state == R3){
-			chickens_inside--;
+			if(chickens_inside == 0){
+				printf("Ghost chicken left \n")
+			}else{
+				chickens_inside--;
+				printf("Chick out to tha mall, %d chicks in da house\n", chickens_inside);
+			}
 		}
 		snprintf(buffer, 50, "echo %d > chickens_inside",chickens_inside);
 		system(buffer);
+		usleep(1000);
 	}
 	
 	//CLEAN UP
@@ -110,22 +116,22 @@ void term(int signum){
 
 void acquire_signal(double* signal, int length, int usleep_time, int channel){
 	int i = 0;
-	for(i=0; i < length; ++i){
+	for(i=0; i < length; i++){
         signal[i] = analogRead(BASE + channel) * 3.3 / 1024;
-        usleep(1000);
+        usleep(usleep_time);
 	}
 }
 
 void analyze_spectrum(fftw_complex* result, int* a, int* b){
-	double Pr = (M_PI * sqrt(result[2][REAL] * result[2][REAL] +
-                          result[2][IMAG] * result[2][IMAG])) / (FRAME_SIZE);
+	double Pr = (M_PI * sqrt(result[3][REAL] * result[3][REAL] +
+                          result[3][IMAG] * result[3][IMAG])) / (FRAME_SIZE);
 	if(Pr > POWER_THRESHHOLD){
 		*a = 0;
 	}else{
 		*a = 1;
 	}
-	Pr = (M_PI * sqrt(result[4][REAL] * result[4][REAL] +
-                          result[4][IMAG] * result[4][IMAG])) / (FRAME_SIZE);
+	Pr = (M_PI * sqrt(result[5][REAL] * result[5][REAL] +
+                          result[5][IMAG] * result[5][IMAG])) / (FRAME_SIZE);
 	if(Pr > POWER_THRESHHOLD){
 		*b = 0;
 	}else{
